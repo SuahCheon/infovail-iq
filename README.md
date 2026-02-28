@@ -55,6 +55,7 @@ The system processes data through four distinct layers to bridge the gap between
 ## Author
 
 **Suah Cheon, MD** — Deputy Director at KDCA
+
 Public Health Practitioner & Researcher
 Focus: Pharmacovigilance, AI-driven Public Health, System Architecture
 
