@@ -9,7 +9,9 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-DEFAULT_DB_PATH = Path("data/processed/naver_posts.db")
+from pipeline.config import DB_PATH
+
+DEFAULT_DB_PATH = DB_PATH
 
 # ------------------------------------------------------------------
 # DDL
@@ -17,13 +19,15 @@ DEFAULT_DB_PATH = Path("data/processed/naver_posts.db")
 
 _SCHEMA_SQL = """\
 CREATE TABLE IF NOT EXISTS posts (
-    post_id      TEXT PRIMARY KEY,
-    channel      TEXT NOT NULL,          -- 'news_comment' | 'cafe' | 'blog'
-    content      TEXT NOT NULL,
-    author_hash  TEXT NOT NULL,          -- SHA-256
-    published_at DATE NOT NULL,
-    keyword      TEXT,
-    collected_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    post_id            TEXT PRIMARY KEY,
+    channel            TEXT NOT NULL,          -- 'news_comment' | 'cafe' | 'blog'
+    content            TEXT NOT NULL,
+    author_hash        TEXT NOT NULL,          -- SHA-256
+    published_at       DATE NOT NULL,
+    keyword            TEXT,
+    collected_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    keyword_group      TEXT,                   -- 'FM_Direct' | 'Court' | 'Chronic'
+    accountability_flag INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS labels (
@@ -86,11 +90,12 @@ def upsert_post(conn: sqlite3.Connection, post: dict) -> bool:
         ``True`` if a new row was inserted, ``False`` if it already existed.
     """
     sql = """\
-    INSERT INTO posts (post_id, channel, content, author_hash, published_at, keyword)
-    VALUES (:post_id, :channel, :content, :author_hash, :published_at, :keyword)
+    INSERT INTO posts (post_id, channel, content, author_hash, published_at, keyword, keyword_group)
+    VALUES (:post_id, :channel, :content, :author_hash, :published_at, :keyword, :keyword_group)
     ON CONFLICT(post_id) DO NOTHING
     """
-    cur = conn.execute(sql, post)
+    row = {"keyword_group": None, **post}
+    cur = conn.execute(sql, row)
     conn.commit()
     return cur.rowcount > 0
 
@@ -102,11 +107,12 @@ def upsert_posts(conn: sqlite3.Connection, posts: list[dict]) -> int:
         Number of newly inserted rows.
     """
     sql = """\
-    INSERT INTO posts (post_id, channel, content, author_hash, published_at, keyword)
-    VALUES (:post_id, :channel, :content, :author_hash, :published_at, :keyword)
+    INSERT INTO posts (post_id, channel, content, author_hash, published_at, keyword, keyword_group)
+    VALUES (:post_id, :channel, :content, :author_hash, :published_at, :keyword, :keyword_group)
     ON CONFLICT(post_id) DO NOTHING
     """
-    cur = conn.executemany(sql, posts)
+    rows = [{"keyword_group": None, **p} for p in posts]
+    cur = conn.executemany(sql, rows)
     conn.commit()
     return cur.rowcount
 

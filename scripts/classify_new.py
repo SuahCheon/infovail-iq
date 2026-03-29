@@ -15,6 +15,9 @@ Usage:
 
     # Custom labeled file to diff against
     python scripts/classify_new.py --existing path/to/file.jsonl
+
+    # Only classify posts published since a given date
+    python scripts/classify_new.py --since 2026-03-14
 """
 
 import json
@@ -29,6 +32,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 import anthropic
+from pipeline.config import DB_PATH, OUTPUT_DIR
 from pipeline.llm_runner import (
     SYSTEM_PROMPT,
     MODEL,
@@ -40,10 +44,16 @@ from pipeline.llm_runner import (
     build_batch_request,
 )
 
-BASE_DIR   = Path(r"C:\infovail-iq")
-NAVER_DB   = BASE_DIR / "data" / "processed" / "naver_posts.db"
-OUTPUT_DIR = BASE_DIR / "data" / "exports" / "labeled"
-DEFAULT_EXISTING = OUTPUT_DIR / "naver_all_20260311_040325_batch_recovered.jsonl"
+
+def _find_latest_labeled(output_dir: Path) -> Path | None:
+    """Find the most recent *_final*.jsonl or *_recovered.jsonl in output_dir."""
+    candidates = sorted(
+        [p for p in output_dir.glob("naver_*_final*.jsonl")]
+        + [p for p in output_dir.glob("naver_*_recovered.jsonl")],
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    return candidates[0] if candidates else None
 
 
 def load_classified_ids(labeled_path: Path) -> set[str]:
@@ -55,9 +65,19 @@ def load_classified_ids(labeled_path: Path) -> set[str]:
     return ids
 
 
-def load_unclassified_posts(db_path: Path, classified_ids: set[str]) -> list[tuple]:
+def load_unclassified_posts(
+    db_path: Path,
+    classified_ids: set[str],
+    since: str | None = None,
+) -> list[tuple]:
     conn = sqlite3.connect(db_path)
-    cur = conn.execute("SELECT post_id, content, keyword_group FROM posts")
+    if since:
+        cur = conn.execute(
+            "SELECT post_id, content, keyword_group FROM posts WHERE published_at >= ?",
+            (since,),
+        )
+    else:
+        cur = conn.execute("SELECT post_id, content, keyword_group FROM posts")
     rows = [
         (pid, content, kg)
         for pid, content, kg in cur.fetchall()
@@ -73,8 +93,12 @@ def main():
         description="Classify unclassified posts via Batch API"
     )
     parser.add_argument(
-        "--existing", type=Path, default=DEFAULT_EXISTING,
-        help=f"Existing labeled JSONL to diff against (default: {DEFAULT_EXISTING.name})",
+        "--existing", type=Path, default=None,
+        help="Existing labeled JSONL to diff against (default: auto-detect latest)",
+    )
+    parser.add_argument(
+        "--since", type=str, default=None,
+        help="Only classify posts with published_at >= YYYY-MM-DD",
     )
     parser.add_argument(
         "--dry-run", action="store_true",
@@ -82,10 +106,19 @@ def main():
     )
     args = parser.parse_args()
 
-    classified_ids = load_classified_ids(args.existing)
+    # Resolve existing labeled file
+    existing_path = args.existing
+    if existing_path is None:
+        existing_path = _find_latest_labeled(OUTPUT_DIR)
+        if existing_path is None:
+            print("[ERROR] No labeled JSONL found. Use --existing to specify.")
+            sys.exit(1)
+        print(f"Auto-detected existing: {existing_path.name}")
+
+    classified_ids = load_classified_ids(existing_path)
     print(f"Already classified: {len(classified_ids)} posts")
 
-    rows = load_unclassified_posts(NAVER_DB, classified_ids)
+    rows = load_unclassified_posts(DB_PATH, classified_ids, since=args.since)
     print(f"To classify: {len(rows)} posts")
 
     if not rows:

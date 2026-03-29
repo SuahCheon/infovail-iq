@@ -181,6 +181,50 @@ cython_debug/
 # Learn more at https://abstra.io/docs
 .abstra/
 
+# =============================================================================
+# Infovail-IQ project-specific ignores
+# =============================================================================
+
+# Archive folders (old versions moved here by cleanup script)
+**/_archive/
+
+# Data: SQLite databases
+data/processed/*.db
+data/processed/*.db-shm
+data/processed/*.db-wal
+
+# Data: Raw and intermediate JSONL exports (large; keep only final corpus in git)
+data/exports/labeled/*.jsonl
+data/exports/labeled/*.txt
+data/exports/kappa/*.csv
+data/exports/kappa/*.xlsx
+data/exports/stats*.txt
+# Exception: final analyzed corpus tracked explicitly
+!data/exports/labeled/naver_all_20260328_181231_batch.jsonl
+
+# Data: CAVES processed CSVs (derivable from raw; not redistributable)
+data/caves/processed/
+
+# Credentials and environment
+.env
+secrets.json
+
+# Word / Excel documents (binary; tracked separately if needed)
+docs/*.docx
+docs/*.xlsx
+
+# Figures: intermediate / exploratory PNGs (keep only publication-ready)
+# Publication-ready figures in outputs/figures/ are tracked
+# outputs/figures/_archive/ excluded by **/_archive/ rule above
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Visual Studio Code
 #  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore

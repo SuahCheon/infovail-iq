@@ -1,0 +1,74 @@
+# LinkedIn Post & Card News: Infovail-IQ Announcement
+
+## 📱 LinkedIn Post (English Only)
+
+**[Title: Beyond Sentiment: Decoding the Architecture of Distrust with Infovail-IQ]**
+
+[cite_start]I am incredibly inspired by the recent groundbreaking research on **PH-LLM** (Public Health Large Language Models) led by Yuan Luo and the team at Northwestern University[cite: 5]. Their work, recently accepted in *npj Digital Medicine*, demonstrates that domain-specific models can significantly outperform general-purpose LLMs in public health tasks.
+
+This research was the direct "aha moment" for my new project: **Infovail-IQ**. 
+
+While traditional sentiment analysis captures *what* people feel, we need to understand the underlying **structure of distrust** to protect public health. **Infovail-IQ** is a 4-layer infoveillance framework designed to bridge the gap between raw social data and strategic policy action by automating the **WHO CAVES framework**.
+
+**The 4 Layers of Infovail-IQ Intelligence:**
+
+1.  **Layer 1: Aggregation (The Baseline)** – Real-time tracking of sentiments, CAVES categories, and misinformation.
+2.  **Layer 2: Co-occurrence (The Structure)** – Mapping how specific concerns (e.g., *Government Distrust + Safety Concerns*) cluster together to identify the root causes of hesitancy.
+3.  **Layer 3: Temporal Dynamics (The Timing)** – Evaluating the impact of official interventions by tracking opinion shifts before and after key events.
+4.  **Layer 4: Policy Intelligence (The Action)** – Generating actionable briefings with behavioral directives for decision-makers.
+
+A core priority of this project is **global accessibility**. By leveraging the compact **PH-LLM-3B** model for local inference, **Infovail-IQ** aims to provide a cost-effective solution for Low- and Middle-Income Countries (LMICs).
+
+I am currently conducting a retrospective evaluation against real-world crisis data and plan to submit our methodological findings to journals like **JMIR** or **IJMI**. I welcome any insights from the global health and informatics community!
+
+**🔗 Project Repository (Building in Public):**
+https://github.com/SuahCheon/infovail-iq
+
+---
+**Suah Cheon**
+*Public Health Practitioner & Researcher*
+
+*Disclaimer: This is a personal research project. The views expressed here are my own and do not reflect the official policy or position of the Korea Disease Control and Prevention Agency (KDCA) or any other organization.*
+
+#PublicHealth #Infoveillance #AI #InfovailIQ #Pharmacovigilance #WHO #Informatics #GlobalHealth #PolicyIntelligence #PHLLM
+
+---
+
+## 🎨 Card News Content (Slide by Slide)
+
+### Slide 1: Cover
+* **Headline:** Beyond Sentiment Analysis: Introducing **Infovail-IQ**
+* **Sub-headline:** Decoding the Architecture of Public Distrust with Multi-Layered AI
+
+### Slide 2: The Problem
+* **Headline:** Is "72% Negative Sentiment" enough for policy-making?
+* **Key Points:**
+    * Standard monitoring lacks structural insight.
+    * We need to understand *why* concerns cluster together.
+    * We need to measure the *real impact* of official responses.
+
+### Slide 3: The Solution
+* **Headline:** A Comprehensive 4-Layer Architecture
+* **Content:**
+    * **L1. Aggregation:** Real-time tracking of sentiment and CAVES categories.
+    * **L2. Co-occurrence:** Mapping how different concerns link together.
+    * **L3. Temporal Dynamics:** Tracking shifts before and after official interventions.
+    * **L4. Policy Intelligence:** Generating actionable briefings with behavioral directives.
+
+### Slide 4: Real-World Impact
+* **Headline:** Validated by Real Crisis Scenarios
+* **Content:**
+    * Tested against the 2026 COVID-19 vaccine contamination audit in South Korea.
+    * Identifying "blind spots" where official rebuttals may affect public anxiety.
+
+### Slide 5: Global Scalability
+* **Headline:** Empowering LMICs with Cost-Effective AI
+* **Key Points:**
+    * Optimized for compact, local models like **PH-LLM-3B**.
+    * No expensive infrastructure required.
+    * Reliable validation via LLM-assisted cross-verification ($Cohen's \kappa$).
+
+### Slide 6: Call to Action
+* **Headline:** Join the Infovail-IQ Journey
+* **Action:** Check out our roadmap on GitHub and share your insights!
+* **Link:** github.com/SuahCheon/infovail-iq

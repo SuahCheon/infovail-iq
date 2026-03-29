@@ -17,7 +17,7 @@ Claude Haiku 4.5 기반 7C 백신 주저함 분류기
              input $0.80 → $1.00, output $4.00 → $5.00,
              cache write $1.00 → $1.25, cache read $0.08 → $0.10
       [필수] load_dotenv(override=True) 추가
-      [필수] CAVES_DIR 경로 수정: data\caves 경로 통일
+      [필수] CAVES_DIR 경로 수정: data/caves 경로 통일
   v4  2026-03-10
       [프롬프트 v1.2.0] C4 정의: rushed development → C1 경고 추가
       [프롬프트 v1.2.0] C7 정의: 악의적 의도 임계값 명시, 강한 분노만으로 C7 불가
@@ -77,10 +77,9 @@ load_dotenv(override=True)
 
 # ── 설정 ──────────────────────────────────────────────────────────────────────
 
-BASE_DIR   = Path(r"C:\infovail-iq")
-CAVES_DIR  = Path(r"C:\infovail-iq\data\caves\processed")
-NAVER_DB   = BASE_DIR / "data" / "processed" / "naver_posts.db"
-OUTPUT_DIR = BASE_DIR / "data" / "exports" / "labeled"
+from pipeline.config import PROJECT_ROOT, DB_PATH, CAVES_DIR, OUTPUT_DIR
+
+NAVER_DB = DB_PATH
 
 MODEL      = "claude-haiku-4-5-20251001"  # snapshot 고정 (재현성)
 MAX_TOKENS = 512   # rationale 포함 여유 확보
@@ -439,11 +438,11 @@ def run_korean(client: anthropic.Anthropic, group: str | None, use_batch: bool):
     cur = con.cursor()
     if group:
         cur.execute(
-            "SELECT post_id, content, keyword_group FROM posts WHERE keyword_group = ?",
+            "SELECT post_id, content, keyword_group FROM posts WHERE keyword_group = ? AND is_relevant = 1",
             (group,)
         )
     else:
-        cur.execute("SELECT post_id, content, keyword_group FROM posts")
+        cur.execute("SELECT post_id, content, keyword_group FROM posts WHERE is_relevant = 1")
     rows = cur.fetchall()
     con.close()
 

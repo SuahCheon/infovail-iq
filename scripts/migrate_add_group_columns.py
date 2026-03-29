@@ -13,34 +13,15 @@ Usage:
 import sqlite3
 import argparse
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 
-DEFAULT_DB = r"C:\infovail-iq\data\processed\naver_posts.db"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-# 키워드 → 그룹 매핑 (단일 소스 오브 트루스)
-KEYWORD_GROUP_MAP = {
-    # FM_Direct
-    "코로나 백신 이물질": "FM_Direct",
-    "코로나 백신 곰팡이": "FM_Direct",
-    "감사원 백신":        "FM_Direct",
-    "정은경 백신":        "FM_Direct",   # accountability subtype
-    # Court
-    "코로나 백신 소송":       "Court",
-    "백신 심근경색 판결":     "Court",
-    "코로나 백신 항소":       "Court",
-    "질병청 항소":            "Court",
-    "코백회":                 "Court",
-    "백신 피해 법원":         "Court",
-    "코로나 백신 사망 판결":  "Court",
-    # Chronic
-    "코로나 백신 피해":         "Chronic",
-    "백신 피해 보상":           "Chronic",
-    "코로나 백신 부작용":       "Chronic",
-    "백신 피해자 모임":         "Chronic",
-    "코로나 백신 정부 책임":    "Chronic",
-    "백신 피해자":              "Chronic",
-}
+from pipeline.config import DB_PATH, KEYWORD_GROUP_MAP
+
+DEFAULT_DB = str(DB_PATH)
 
 ACCOUNTABILITY_KEYWORDS = {"정은경 백신"}
 

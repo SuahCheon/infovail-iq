@@ -18,17 +18,21 @@ import sqlite3
 import httpx
 import os
 import argparse
+import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 load_dotenv()
+
+from pipeline.config import PROJECT_ROOT
 
 # ── 설정 ──────────────────────────────────────────────────────────────────────
 
-BASE_DIR    = Path(r"C:\infovail-iq")
-DB_PATH     = BASE_DIR / "data" / "processed" / "event_log.db"
-MD_PATH     = BASE_DIR / "docs" / "EVENT_LOG.md"
+DB_PATH     = PROJECT_ROOT / "data" / "processed" / "event_log.db"
+MD_PATH     = PROJECT_ROOT / "docs" / "EVENT_LOG.md"
 NAVER_URL   = "https://openapi.naver.com/v1/search/news.json"
 
 NAVER_CLIENT_ID     = os.getenv("NAVER_CLIENT_ID")

@@ -20,8 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from pipeline.config import COLLECT_KEYWORDS, DB_PATH, KEYWORD_GROUP_MAP
 from pipeline.ingestion.db import (
-    DEFAULT_DB_PATH,
     count_posts,
     get_connection,
     init_db,
@@ -41,25 +41,7 @@ logger = logging.getLogger(__name__)
 # PoC keywords (POC_SCENARIO.md §5)
 # ------------------------------------------------------------------
 
-KEYWORDS_PRIMARY = [
-    "코로나 백신 이물질",
-    "감사원 백신",
-    "코로나 백신 곰팡이",
-]
-
-KEYWORDS_BASELINE = [
-    "코로나 백신 피해",
-    "백신 피해 보상",
-    "코로나 백신 부작용",
-    "백신 피해자 모임",
-]
-
-KEYWORDS_POLITICAL = [
-    "정은경 백신",
-    "코로나 백신 정부 책임",
-]
-
-ALL_KEYWORDS = KEYWORDS_PRIMARY + KEYWORDS_BASELINE + KEYWORDS_POLITICAL
+ALL_KEYWORDS = COLLECT_KEYWORDS
 
 CHANNELS: list[Channel] = ["blog", "news"]
 
@@ -77,7 +59,7 @@ DATE_TO = "2026-03-04"
 
 def collect_and_store(
     *,
-    db_path: Path = DEFAULT_DB_PATH,
+    db_path: Path = DB_PATH,
     dry_run: bool = False,
     date_from: str = DATE_FROM,
     date_to: str = DATE_TO,
@@ -117,7 +99,7 @@ def collect_and_store(
                 total_api += len(raw)
 
                 # --- Preprocess ---
-                rows = preprocess(raw)
+                rows = preprocess(raw, keyword_group_map=KEYWORD_GROUP_MAP)
 
                 # Map API channel name to DB channel name
                 db_channel = CHANNEL_MAP[channel]
@@ -206,8 +188,8 @@ def main() -> None:
     parser.add_argument(
         "--db",
         type=Path,
-        default=DEFAULT_DB_PATH,
-        help=f"SQLite DB path (default: {DEFAULT_DB_PATH})",
+        default=DB_PATH,
+        help=f"SQLite DB path (default: {DB_PATH})",
     )
     parser.add_argument(
         "--dry-run",

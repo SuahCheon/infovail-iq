@@ -6,136 +6,135 @@
 
 > **Multi-Layered AI Infoveillance for Public Health Policy**
 >
-> *"Beyond Sentiment Analysis: Decoding the Architecture of Public Distrust through CAVES-based Intelligence."*
+> *"Beyond Sentiment Analysis: Decoding the Architecture of Public Distrust through 7C-based Intelligence."*
 
-Infovail-IQ automates the **WHO CAVES framework** for vaccine hesitancy using compact LLMs, transforming social media data into actionable policy intelligence. It offers a cost-effective and scalable solution for real-time infodemic management, specifically tailored for both advanced health agencies and Low- and Middle-Income Countries (LMICs).
+Infovail-IQ automates the **7C framework** (Geiger et al., 2021) for vaccine hesitancy classification using LLMs, transforming social media data into actionable policy intelligence. It offers a cost-effective and scalable solution for real-time infodemic management.
 
 ---
 
 ## Core Philosophy: Bounded Autonomy
 
-Infovail-IQ operates on the principle of **Bounded Autonomy**. It does not aim to replace human decision-makers but rather to provide a "structured guide" by decomposing complex public sentiments into manageable, evidence-based policy signals.
+Infovail-IQ operates on the principle of **Bounded Autonomy**. It does not aim to replace human decision-makers but rather to provide a structured guide by decomposing complex public sentiments into manageable, evidence-based policy signals.
+
+---
+
+## PoC1 — Completed (March 2026)
+
+**Research question:** How do 7C-type distributions of vaccine hesitancy discourse change before and after institutional disclosure events, across Naver social media channels?
+
+### Dataset
+
+| Item | Value |
+|---|---|
+| Platform | Naver (news comments, blog) |
+| Collection period | 2026-02-07 – 2026-03-21 (6 weeks) |
+| Raw posts collected | 8,694 |
+| Final analyzed corpus | **3,010 posts** (after 3-stage filtering) |
+| Keywords | 10 vaccine-related terms |
+
+### Trigger Events
+
+| Event | Date | Description |
+|---|---|---|
+| E1 | 2026-02-23 | Board of Audit and Inspection (BAI) report: 1,285 unreported foreign substance cases in COVID-19 vaccines |
+| E2 | 2026-03-02 | SBS broadcast: court-recognized causal link between COVID-19 vaccination and myocardial infarction death |
+
+### Classification Pipeline
+
+- **Framework:** 7C model (Geiger et al., 2021) — Confidence, Complacency, Constraints, Calculation, Collective responsibility, Compliance, Conspiracy
+- **Empirical bridge:** CAVES dataset (Poddar et al., 2022, SIGIR) → 7C mapping
+- **Model:** `claude-haiku-4-5-20251001` (snapshot fixed for reproducibility)
+- **Prompt version:** v1.1.0 (see [`PROMPT_REGISTRY.md`](PROMPT_REGISTRY.md))
+- **CAVES benchmark:** macro F1 = 0.585
+- **Korean gold standard:** macro F1 = 0.548, κ = 0.330 (n=41, dual-author)
+
+### Key Findings
+
+- Post-E1 surge in C1 (Confidence) and C7 (Conspiracy) across news comments
+- C6 (Compliance) as pre-existing baseline; E2 converted diffuse conspiratorial framing into targeted institutional distrust ("discourse specificization")
+- Only ~5% overlap between E1 and E2 discourse clusters → issue-specific independent activation pathways
+- Naver Blog: global conspiracy content circulation medium; News comments: event-reactive institutional distrust medium
+
+### Output
+
+- Manuscript submitted to *JMIR Infodemiology* (pending IRB exemption confirmation)
+- Abstract submitted to ISoP Global Meeting 2026
+
+→ See [`docs/POC_SCENARIO.md`](docs/POC_SCENARIO.md) for full scenario context.
+
+---
+
+## Repository Structure
+
+```
+infovail-iq/
+├── pipeline/
+│   └── ingestion/          # Naver API client, DB, preprocessor
+├── scripts/                # Collection, classification, analysis scripts
+├── data/
+│   ├── caves/processed/    # CAVES benchmark dataset (train/val/test)
+│   ├── exports/labeled/    # LLM classification outputs (JSONL)
+│   └── processed/          # SQLite DB (naver_posts.db)
+├── outputs/
+│   └── figures/            # Publication-ready figures (300 dpi PNG)
+├── docs/                   # Manuscript drafts, codebooks, IRB documents
+├── PROMPT_REGISTRY.md      # Prompt version history
+├── HANDOFF_SESSION_END.md  # Session continuity document
+└── README.md
+```
 
 ---
 
 ## Architecture
 
 ```mermaid
-flowchart TB
-    classDef source fill:#4A90D9,stroke:#2C5F8A,color:#fff,rx:8
-    classDef process fill:#F5F5F5,stroke:#CCCCCC,color:#333,rx:4
-    classDef db fill:#FFD966,stroke:#BFA130,color:#333,rx:4
-    classDef layer1 fill:#6DB56D,stroke:#3D7A3D,color:#fff,rx:4
-    classDef layer2 fill:#E8833A,stroke:#B35F1E,color:#fff,rx:4
-    classDef layer3 fill:#D94F4F,stroke:#A03030,color:#fff,rx:4
-    classDef layer4 fill:#7B5EA7,stroke:#5A3D82,color:#fff,rx:4
-    classDef eval fill:#5BBFBF,stroke:#3A8A8A,color:#fff,rx:4
-    classDef human fill:#2C3E50,stroke:#1A252F,color:#fff,rx:8
-
-    subgraph S1["1. Data Ingestion"]
-        A1[/"Naver Search API"/]:::source
-        A2["Keyword Filter"]:::process
-        A3[("SQLite DB")]:::db
-    end
-    A1 -->|"blog, news, cafe"| A2 -->|"cleaned posts"| A3
-
-    subgraph S2["2. Layer 1: Local LLM Classification"]
-        B1["PH-LLM-3B\n(Q4_K_M, llama.cpp)"]:::layer1
-        B2["Sentiment\npos / neg / neu"]:::layer1
-        B3["Misinformation\nmisinfo / factual"]:::layer1
-        B4["CAVES 7 Types\nA B C D E F G"]:::layer1
-    end
-    A3 --> B1
-    B1 --> B2 & B3 & B4
-    B2 & B3 & B4 --> DB2
-
-    DB2[("DB: Labeled Posts\n+ CAVES Columns")]:::db
-
-    subgraph S3["3. Layer 2 and 3: Advanced Analytics"]
-        subgraph L2["Layer 2: Co-occurrence"]
-            C1["Co-occurrence Matrix"]:::layer2
-            C2["Phi Coefficients"]:::layer2
-            C3["Concern Clusters"]:::layer2
-        end
-        subgraph L3["Layer 3: Temporal Dynamics"]
-            D1["Daily CAVES Trends"]:::layer3
-            D2["Event Impact Analysis"]:::layer3
-            D3["Leading Indicators"]:::layer3
-        end
-    end
-    DB2 --> C1 --> C2 --> C3
-    DB2 --> D1 --> D2 --> D3
-
-    subgraph S4["4. Layer 4: Policy Intelligence"]
-        E1["Analysis Summarizer\n(L1 + L2 + L3)"]:::layer4
-        E2["Claude API\n(Sonnet)"]:::layer4
-        E3["Weekly Briefing\nCounter-Messages\nFact-Checks"]:::layer4
-    end
-    C3 --> E1
-    D3 --> E1
-    E1 --> E2 --> E3
-
-    subgraph S5["5. Retrospective Evaluation"]
-        F1[/"KDCA Press Releases\nand SNS Responses"/]:::source
-        F2["3-Axis Comparison\nTiming / Coverage / Messaging"]:::eval
-        F3["Retrospective Report"]:::eval
-    end
-    E3 --> F2
-    F1 --> F2 --> F3
-
-    H["Policy Decision-Maker\n(Bounded Autonomy)"]:::human
-    E3 -->|"recommendations"| H
-    F3 -->|"validation"| H
+flowchart LR
+    A["Naver API\n(news comments, blog)"] -->|"raw posts"| B["3-Stage Filter\n(boilerplate / hard_exclude\n/ must-have keywords)"]
+    B -->|"3,010 posts"| C["LLM Classifier\nclaude-haiku-4-5-20251001\nPrompt v1.1.0"]
+    C -->|"7C labels"| D["SQLite DB\nnaver_posts.db"]
+    D --> E["Statistical Analysis\n(OR, chi-square,\npre/post comparison)"]
+    E --> F["Figures & Manuscript\nJMIR Infodemiology"]
 ```
-
-> 📐 [Edit this diagram on Mermaid Chart](https://mermaid.ai/live/edit?utm_source=mermaid_mcp_server&utm_medium=remote_server&utm_campaign=claude#pako:eNqNVmtP4zgU_StWkFYzmhZInEDJh5XyXBDtiKFo9wMZjUzitBaJXdkJ0N3Z_77XcVrSFpgNUsDxPcf3nvsw_1i5KKjlW2UlnvMlkQ26CzOO4MkrolRMS6REK3OKSlZV_pEbXJzGFyPVSPFI_SMn8tJJMMpFJaR_VJblSL74kz2ClRQ5VapnSD39s2WIumfDgDHWDO4eQ_GwAafxxdnZFhymgY1PfwGuyJpKuyc4i0PvLN4S4Pg8wPGe_28SOD1BMplgHLx6gL3UTv4PAe4J4gs3ddMtQXCKT19D-IjA7QnOQy8JzrcEHgQwcX5BQJ9I1cO9MEzD1_NxMAkOMrgPX7Y14T3eiXDinW7xduB4TnpYAYZBtQ8LSVZLNLfvM8s-RjFpCLriC6oaJnhmfTd2-gns-5PM-kqeqERzSmS-RMHNVWadfPd93xThwNgBvmu6fhayQCmrGiqBDAz7YhtY4vtPmTX_NmUNRXGYWZ-1WfFgLCgvNr4GNhqPf_-ZWQ-VWIwQp89qhHJS0sz6Cef1m3lFCacFWgnVqG4HHwarnXOO0VSnDdk-mooc9J9OZyjSkrKS5eQg_lBLdHM5BrMxDrOMf_rm_rj-MRuhqiI1Oc5Xq88mRlPRA6Q-b055w2p4ARKcQycQwaJ7t--gMKBmTDFeClkbfzJemw8ALEnetKR6B-wCOAr-TOboHN2tV1QBNkAhilCMEpSiPw5xQ62xlhNCNsvQNksH_QZu6Ze7sRx-64zi0DE78IfObByCvuSBVpCUmy4pGf-CjGuRqNqaq0HO9zOlNcCbTDmI8AJhHwXFE-E5EAacVOuG5WonU1v4VAvfY304bSzyvJWSAnYHoJ9Ip3fHBM1II9nLQChnD6Lpb5YMmGkJNcMgu-oDc9ydAMySQ6G1CpriHfMuFYfh4G04IMIdrVdCQt3Ga07qfQ26DOiQYsKqda_3HcRVDI_EewAdUPIEYaCregX1ZQRW7CNM5xQlBeMLmByFbh0h3wFs4xrUGtRJVziRKbKoX-Hd3djsxv3qjabWFe9uSsX1odgqlq_BpYZWFVscJD3R6mziQ_O2rolkf8Ocgs6e2ugLVI9-4WFTuwO41grGRVvQbg4Cai44p8179lqnvyh9hGyEktES9AJQJFpwUI5nMBTJomvTFIQfR0uaP6pDqoFwkWnSpG_SeHeZGMESI1jyhmAeOOQdo1sKV4Va0bxhTxQlcBO1h8Mv7Yb_dRwF6EbqfxZuoaGJ6vzVTTn_OodPaiW4_vb2nZBqxfA4eAG5IwH1JZnqZtodq3XxnMBXuFxABfjT6KE16iTQF-SASWu56_cthWZo9o0HaiVGnrTvstTul-bXVp5L3dKmcmKaw7AVfDwjj6YsQkhWocdO2wgu6nWf6u763T0HbiJJc1HDwC86Nbu76LI_e2MCfrKiFxt2rX__A6JR9vk) | Source: [`docs/architecture.mermaid`](docs/architecture.mermaid)
-
-* **Layer 1: Aggregation** (The "What")
-  — Sentiment distribution, CAVES type ratios, and misinformation detection using PH-LLM-3B.
-
-* **Layer 2: Co-occurrence Analysis** (The "Structure")
-  — Analyzes how concerns cluster together (e.g., Government Distrust + Side Effects) using Phi coefficients to reveal the underlying architecture of distrust.
-
-* **Layer 3: Temporal Dynamics** (The "When")
-  — Tracks shifts in public opinion before and after official responses to evaluate intervention efficacy and identify leading indicators of emerging concerns.
-
-* **Layer 4: Policy Intelligence** (The "Action")
-  — Generates weekly policy briefings via Claude API, including behavioral directives and counter-messaging strategies based on integrated insights from Layers 1–3.
-
----
-
-## Current PoC Scenario
-
-**2026 COVID-19 Vaccine Trust Crisis** (South Korea)
-
-Two trigger events in February–March 2026 activated independent discourse pathways in Korean online media:
-
-1. **Feb 23, 2026**: Board of Audit report revealing 1,285 unreported foreign substance cases in COVID-19 vaccines (FM_Direct discourse, ×73 surge)
-2. **Mar 2, 2026**: SBS exclusive report on court-recognized causal link between COVID-19 vaccination and myocardial infarction death, with KDCA's subsequent appeal as secondary context (Court discourse, ×3 surge)
-
-Only ~5% overlap between the two discourse clusters confirms issue-specific independent activation pathways. Meanwhile, chronic baseline distrust acts as an amplifier for both events.
-
-This dual-trigger, multi-layered trust crisis — where safety concerns (C1), compliance resistance (C6), and conspiracy beliefs (C7) co-occur in event-specific profiles — demonstrates why sentiment analysis alone cannot decode the architecture of public distrust.
-
-→ See [`poc1/docs/POC_SCENARIO.md`](poc1/docs/POC_SCENARIO.md) for full context.
 
 ---
 
 ## Roadmap
 
-- [ ] **PoC1** — Local model validation & prompt engineering
-- [ ] **PoC2** — Policy intelligence dashboard & 4-week operational trial
+- [x] **PoC1** — 7C LLM classification pipeline + Korean social media analysis (Mar 2026)
+- [ ] **PoC2** — Broader keyword coverage (pro-vaccine, neutral) + multi-platform expansion
+- [ ] **Policy intelligence dashboard** — Real-time 4-week operational trial
 - [ ] **Retrospective evaluation** — System recommendations vs. actual KDCA responses
-- [ ] **Publication** — Target: *JMIR Infodemiology* / *IJMI*
+
+---
+
+## Tech Stack
+
+- Python 3.11+, [uv](https://github.com/astral-sh/uv)
+- SQLite (data storage)
+- Anthropic Batch API (`claude-haiku-4-5-20251001`)
+- Naver Search API (data collection)
+- matplotlib, Paul Tol "Muted" palette (figures)
+
+---
+
+## Key References
+
+- Geiger, M. et al. (2021). The 7C model of vaccination readiness. *EJPA*.
+- Poddar, S. et al. (2022). CAVES: An annotated corpus for vaccine stance detection. *SIGIR*.
+- Betsch, C. et al. (2018). Beyond confidence: Development of a measure assessing the 5C psychological antecedents of vaccination. *PLoS ONE*.
+- Chu, J. et al. (2025). Korea vaccine injury compensation. *Vaccine*. PMID 40037238.
 
 ---
 
 ## Author
 
-**Suah Cheon, MD** — Deputy Director at KDCA
+**Suah Cheon, MD, M.M.Sc.** — Deputy Director, KDCA
+ORCID: [0009-0004-5961-2850](https://orcid.org/0009-0004-5961-2850)
 
-Public Health Practitioner & Researcher
-Focus: Pharmacovigilance, AI-driven Public Health, System Architecture
+**Euncheol Son, MD, PhD** — University of Ulsan College of Medicine (co-author, PoC1)
+ORCID: [0000-0002-5288-1490](https://orcid.org/0000-0002-5288-1490)
+
+---
 
 ## License
 

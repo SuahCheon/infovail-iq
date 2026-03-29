@@ -1,1 +1,0 @@
-{discussion_draft content}

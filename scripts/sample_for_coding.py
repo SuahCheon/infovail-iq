@@ -1,10 +1,10 @@
 """
 sample_for_coding.py
 --------------------
-inter-rater reliability용 100건 층화추출
+inter-rater reliability용 50건 층화추출 (v2)
 
 층화 설계:
-  그룹(3) × 이벤트 전후(2) = 6셀 × ~17건
+  그룹(3) × 이벤트 전후(2) = 6셀 × 8~9건
   - FM_Direct  : 키워드 그룹 1 (백신 직접 관련)
   - Court      : 키워드 그룹 2 (법원 판결)
   - Chronic    : 키워드 그룹 3 (만성 불신)
@@ -12,38 +12,42 @@ inter-rater reliability용 100건 층화추출
   - post       : 2026-02-23 ~ 2026-03-21
 
 출력:
-  data/exports/kappa/sample_100_<ts>.csv     — 분류용 원본
-  data/exports/kappa/coding_form_<ts>.xlsx   — 코더 전달용 폼
+  data/exports/kappa/sample_50_<ts>.csv            — 분류용 원본
+  data/exports/kappa/coding_sample_v2_<ts>.xlsx    — 코더 전달용 폼
 
 Usage:
     python sample_for_coding.py
     python sample_for_coding.py --seed 99   # 재현성 시드 변경
-    python sample_for_coding.py --n 100     # 추출 건수 (기본값 100)
+    python sample_for_coding.py --n 50      # 추출 건수 (기본값 50)
 """
 
 import sqlite3
 import csv
 import random
 import argparse
+import sys
 from pathlib import Path
 from datetime import datetime, date
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pipeline.config import DB_PATH, KAPPA_DIR
+
 # ── 설정 ──────────────────────────────────────────────────────────────────────
 
-BASE_DIR   = Path(r"C:\infovail-iq")
-NAVER_DB   = BASE_DIR / "data" / "processed" / "naver_posts.db"
-OUTPUT_DIR = BASE_DIR / "data" / "exports" / "kappa"
+NAVER_DB   = DB_PATH
+OUTPUT_DIR = KAPPA_DIR
 
 EVENT_DATE = date(2026, 2, 23)   # BAI audit 공개일
 
-# 셀별 목표 건수 (총 100건, 6셀 균등)
+# 셀별 목표 건수 (총 50건, 6셀)
 CELL_TARGETS = {
-    ("FM_Direct", "pre"):  17,
-    ("FM_Direct", "post"): 17,
-    ("Court",     "pre"):  17,
-    ("Court",     "post"): 17,
-    ("Chronic",   "pre"):  16,
-    ("Chronic",   "post"): 16,
+    ("FM_Direct", "pre"):  8,
+    ("FM_Direct", "post"): 8,
+    ("Court",     "pre"):  9,
+    ("Court",     "post"): 9,
+    ("Chronic",   "pre"):  8,
+    ("Chronic",   "post"): 8,
 }
 
 # ── 그룹 정의 (키워드 → 그룹 매핑) ───────────────────────────────────────────
@@ -104,10 +108,23 @@ def load_posts(db_path: Path) -> list[dict]:
         FROM posts
         WHERE published_at IS NOT NULL
           AND published_at != ''
+          AND is_relevant = 1
     """)
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     return rows
+
+
+def deduplicate_by_content(posts: list[dict]) -> list[dict]:
+    """content 기준 텍스트 중복 제거."""
+    seen = set()
+    result = []
+    for p in posts:
+        key = (p.get("content") or "").strip()
+        if key and key not in seen:
+            seen.add(key)
+            result.append(p)
+    return result
 
 
 def stratified_sample(posts: list[dict], targets: dict, seed: int) -> list[dict]:
@@ -320,7 +337,7 @@ def save_coding_form(samples: list[dict], out_path: Path) -> None:
     meta.append(["항목", "값"])
     meta.append(["추출일시", datetime.now().strftime("%Y-%m-%d %H:%M")])
     meta.append(["총 추출건수", len(samples)])
-    meta.append(["층화 기준", "키워드그룹(3) × 이벤트전후(2) = 6셀"])
+    meta.append(["층화 기준", "키워드그룹(3) × 이벤트전후(2) = 6셀 × 8~9건"])
     meta.append(["이벤트 기준일", str(EVENT_DATE)])
     meta.append(["랜덤 시드", "기록됨 (재현 가능)"])
     meta.append([""])
@@ -337,24 +354,27 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42,
                         help="랜덤 시드 (기본값: 42)")
-    parser.add_argument("--n", type=int, default=100,
-                        help="추출 건수 (기본값: 100)")
+    parser.add_argument("--n", type=int, default=50,
+                        help="추출 건수 (기본값: 50)")
     args = parser.parse_args()
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    print(f"[Infovail-IQ] 층화추출 시작 — seed={args.seed}, n={args.n}")
+    print(f"[Infovail-IQ] 층화추출 시작 - seed={args.seed}, n={args.n}")
     print(f"DB: {NAVER_DB}")
 
     posts   = load_posts(NAVER_DB)
     print(f"전체 포스트: {len(posts)}건")
 
+    posts = deduplicate_by_content(posts)
+    print(f"중복 제거 후: {len(posts)}건")
+
     samples = stratified_sample(posts, CELL_TARGETS, seed=args.seed)
     print(f"\n추출 완료: {len(samples)}건")
 
-    csv_path  = OUTPUT_DIR / f"sample_100_{ts}.csv"
-    xlsx_path = OUTPUT_DIR / f"coding_form_{ts}.xlsx"
+    csv_path  = OUTPUT_DIR / f"sample_50_{ts}.csv"
+    xlsx_path = OUTPUT_DIR / f"coding_sample_v2_{ts}.xlsx"
 
     save_csv(samples, csv_path)
     save_coding_form(samples, xlsx_path)

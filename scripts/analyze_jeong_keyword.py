@@ -15,11 +15,15 @@ import io
 import argparse
 from collections import Counter
 from datetime import date
+from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
+from pipeline.config import DB_PATH
+
 # -- 설정 -------------------------------------------------------------------
-DEFAULT_DB = r"C:\infovail-iq\data\processed\naver_posts.db"
+DEFAULT_DB = str(DB_PATH)
 
 # 키워드 -> 그룹 매핑
 GROUP_MAP = {
